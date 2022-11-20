@@ -1,0 +1,10 @@
+sensors:
+  temp-livingroom:
+    unit: C
+    description: Livingroom Temperature
+    precision: 0.14
+topics:
+  - name: temperature
+    sensor: temp-livingroom
+    driver: drivermqtt.drivermqtt.MqttDriver
+    connection: 193.196.54.255:1883
