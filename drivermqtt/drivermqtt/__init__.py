@@ -5,11 +5,12 @@ import sys
 import uuid
 
 import paho.mqtt.client as mqtt
+from paho.mqtt.packettypes import PacketTypes
+from paho.mqtt.properties import Properties
 
 from drivermanager.drivermanager import Driver, Connection
 
 sys.path.append('../')
-
 
 
 class MqttDriver(Driver):
@@ -31,9 +32,14 @@ class MqttConnection(Connection):
         self.client.connect(hostname, port, 60)
         self.client.loop_start()
 
-    def publish(self, topic, payload):
+    def publish(self, topic, payload, reply_to=None):
         logging.info("MQTT: Sending to topic \"{}\": {}".format(topic, payload))
-        self.client.publish(topic=topic, payload=payload, qos=0, retain=False)
+        if reply_to is None:
+            self.client.publish(topic=topic, payload=payload, qos=0, retain=False)
+        else:
+            properties = Properties(PacketTypes.PUBLISH)
+            properties.ResponseTopic = reply_to
+            self.client.publish(topic=topic, payload=payload, properties=properties, qos=0, retain=False)
 
     def subscribe(self, topic, callback):
         logging.info("MQTT: Subscribed to topic \"{}\"".format(topic))

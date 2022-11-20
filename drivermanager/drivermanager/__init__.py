@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-
+import datetime
 import json
 import logging
+import time
+
 import yaml
 
 from pydoc import locate
@@ -12,6 +14,8 @@ from yaml import UnsafeLoader
 
 class DriverManager(object):
     """ Used by the application developer """
+
+    callback_response = None
 
     def __init__(self, filespec) -> None:
         self.cfg = DriverManagerConfig(filespec)
@@ -54,9 +58,40 @@ class DriverManager(object):
             conn.subscribe(topic['name'], lambda message: callback(
                 json.loads(message, object_hook=lambda d: namedtuple('X', d.keys())(*d.values()))))
 
-    def close(self):
-        for conn in self.connection_cache.values():
-            conn.close()
+    def request_response(self, payload):
+        self.callback_response = None
+        config = self.cfg.get_request_topic()
+        # Establish connection to reply topic
+        driver = Driver.for_name(config['driver'])
+        reply_to = "response/" + str(time.time())
+        logging.info("Reply Topic is " + reply_to)
+        conn = driver.connect(config)
+        conn.subscribe(reply_to, lambda message: self.response_callback(message))
+
+        key = "[{}][{}][{}]".format(config['name'], config['driver'], config['connection'])
+        conn = self.connection_cache.get(key, None)
+        if conn is None:
+            logging.info("Creating a new connection with driver \"{}\"".format(config['driver']))
+            driver = Driver.for_name(config['driver'])
+            conn = driver.connect(config)
+            self.connection_cache[key] = conn
+        # Sending message
+        message = ReqRepMessage(reply_to, payload)
+        conn.publish(config['name'], json.dumps(message.__dict__), reply_to)
+
+        while self.callback_response is None:
+            logging.info("Waiting for response on " + reply_to)
+            time.sleep(1)
+
+        return self.callback_response
+
+    def response_callback(self, response):
+        self.callback_response = response
+
+
+def close(self):
+    for conn in self.connection_cache.values():
+        conn.close()
 
 
 class DriverManagerConfig(object):
@@ -78,12 +113,23 @@ class DriverManagerConfig(object):
                 topics.append(topic)
         return topics
 
+    def get_request_topic(self):
+        return self.cfg['requestReplyTopic']
+
 
 class Message(object):
     """ Generic message object """
 
     def __init__(self, sensor={}, payload=None) -> None:
         self.sensor = sensor
+        self.payload = payload
+
+
+class ReqRepMessage(object):
+    """ Generic message object """
+
+    def __init__(self, replyTo, payload=None) -> None:
+        self.replyTo = replyTo
         self.payload = payload
 
 
@@ -107,7 +153,7 @@ class Driver(object):
 class Connection(object):
     """ Abstract Connection class """
 
-    def publish(self, topic, payload):
+    def publish(self, topic, payload, reply_to=None):
         """ Sends a payload to a given topic """
         raise NotImplementedError('publish(): Connection is supposed to be an abstract class')
 

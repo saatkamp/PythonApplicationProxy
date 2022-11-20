@@ -8,3 +8,7 @@ topics:
     sensor: temp-livingroom
     driver: drivermqtt.drivermqtt.MqttDriver
     connection: 193.196.54.255:1883
+requestReplyTopic:
+  name: job
+  driver: drivermqtt.drivermqtt.MqttDriver
+  connection: 193.196.54.255:1883

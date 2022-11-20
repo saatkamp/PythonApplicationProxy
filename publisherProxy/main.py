@@ -6,7 +6,7 @@ from drivermanager import drivermanager
 
 
 class S(BaseHTTPRequestHandler):
-    def _set_response(self):
+    def _set_response(self, response_message):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
@@ -14,8 +14,10 @@ class S(BaseHTTPRequestHandler):
     def do_GET(self):
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
         manager = drivermanager.DriverManager('C:/Users/deenfer2/PycharmProjects/applicationProxy/driver-manager.yml')
-        manager.publish("temp-livingroom", 100)
-        self._set_response()
+        # manager.publish("temp-livingroom",100)
+        response = manager.request_response("test")
+        logging.info("Received  {}", response)
+        self._set_response(response)
         self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
 
     def do_POST(self):
