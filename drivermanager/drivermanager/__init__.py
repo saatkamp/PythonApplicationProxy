@@ -77,7 +77,7 @@ class DriverManager(object):
             self.connection_cache[key] = conn
         # Sending message
         message = ReqRepMessage(reply_to, payload)
-        conn.publish(config['name'], json.dumps(message.__dict__), reply_to)
+        conn.publish(config['name'], message.get_json())
 
         while self.callback_response is None:
             logging.info("Waiting for response on " + reply_to)
@@ -125,12 +125,17 @@ class Message(object):
         self.payload = payload
 
 
+
 class ReqRepMessage(object):
     """ Generic message object """
 
-    def __init__(self, replyTo, payload=None) -> None:
-        self.replyTo = replyTo
+    def __init__(self, reply_to, payload=None) -> None:
+        self.reply_to = reply_to
         self.payload = payload
+
+    def get_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__,
+                          sort_keys=True, indent=2)
 
 
 class Driver(object):

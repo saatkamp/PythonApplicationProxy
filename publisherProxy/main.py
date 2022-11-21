@@ -5,7 +5,7 @@ import logging
 from drivermanager import drivermanager
 
 
-class S(BaseHTTPRequestHandler):
+class WebController(BaseHTTPRequestHandler):
     def _set_response(self, response_message):
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
@@ -13,10 +13,12 @@ class S(BaseHTTPRequestHandler):
 
     def do_GET(self):
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
+        request = Request("GET", self.path, self.headers)
         manager = drivermanager.DriverManager('C:/Users/deenfer2/PycharmProjects/applicationProxy/driver-manager.yml')
         # manager.publish("temp-livingroom",100)
-        response = manager.request_response("test")
+        response = manager.request_response(request)
         logging.info("Received  {}", response)
+
         self._set_response(response)
         self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
 
@@ -30,7 +32,18 @@ class S(BaseHTTPRequestHandler):
         self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
 
 
-def run(server_class=HTTPServer, handler_class=S, port=8081):
+class Request(object):
+    def __init__(self, method, path, headers, payload=None) -> None:
+        self.method = method
+        self.path = path
+        self.headers = headers
+        self.payload = payload
+
+    def get_request(self):
+        return self
+
+
+def run(server_class=HTTPServer, handler_class=WebController, port=8081):
     logging.basicConfig(level=logging.INFO)
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
