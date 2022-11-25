@@ -1,3 +1,5 @@
+import io
+import json
 import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
@@ -8,19 +10,21 @@ from drivermanager import drivermanager
 class WebController(BaseHTTPRequestHandler):
     def _set_response(self, response_message):
         self.send_response(200)
-        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-type', 'application/json')
         self.end_headers()
 
     def do_GET(self):
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
-        request = Request("GET", self.path, self.headers)
+        request = Request("GET", self.path, str(self.headers))
         manager = drivermanager.DriverManager('C:/Users/deenfer2/PycharmProjects/applicationProxy/driver-manager.yml')
         # manager.publish("temp-livingroom",100)
         response = manager.request_response(request)
-        logging.info("Received  {}", response)
 
         self._set_response(response)
-        self.wfile.write("GET request for {}".format(self.path).encode('utf-8'))
+
+        my_json = json.load(io.BytesIO(response))
+
+        self.wfile.write(my_json.encode('utf8'))
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])  # <--- Gets the size of data
