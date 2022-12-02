@@ -4,7 +4,7 @@ import sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 
-from drivermanager import drivermanager
+import drivermanager
 
 
 class WebController(BaseHTTPRequestHandler):
@@ -16,8 +16,7 @@ class WebController(BaseHTTPRequestHandler):
     def do_GET(self):
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
         request = Request("GET", self.path, str(self.headers))
-        manager = drivermanager.DriverManager('C:/Users/deenfer2/PycharmProjects/applicationProxy/driver-manager.yml')
-        # manager.publish("temp-livingroom",100)
+        manager = drivermanager.DriverManager('../driver-manager.yml')
         response = manager.request_response(request)
 
         self._set_response(response)
