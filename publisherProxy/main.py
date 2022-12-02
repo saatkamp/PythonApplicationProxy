@@ -8,6 +8,13 @@ import drivermanager
 
 
 class WebController(BaseHTTPRequestHandler):
+
+    manager = None
+
+    def __init__(self, *args):
+        self.manager = drivermanager.DriverManager('../driver-manager.yml')
+        BaseHTTPRequestHandler.__init__(self, *args)
+
     def _set_response(self, response_message):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
@@ -16,14 +23,10 @@ class WebController(BaseHTTPRequestHandler):
     def do_GET(self):
         logging.info("GET request,\nPath: %s\nHeaders:\n%s\n", str(self.path), str(self.headers))
         request = Request("GET", self.path, str(self.headers))
-        manager = drivermanager.DriverManager('../driver-manager.yml')
-        response = manager.request_response(request)
 
-        self._set_response(response)
+        response = self.manager.request_response(request)
 
-        my_json = json.load(io.BytesIO(response))
-
-        self.wfile.write(my_json.encode('utf8'))
+        self._send_to_topic_and_return(response)
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])  # <--- Gets the size of data
@@ -31,9 +34,18 @@ class WebController(BaseHTTPRequestHandler):
         logging.info("POST request,\nPath: %s\nHeaders:\n%s\n\nBody:\n%s\n",
                      str(self.path), str(self.headers), post_data.decode('utf-8'))
 
-        self._set_response()
-        self.wfile.write("POST request for {}".format(self.path).encode('utf-8'))
+        request = Request("POST", self.path, str(self.headers), post_data.decode("utf-8"))
 
+        self._send_to_topic_and_return(request)
+
+    def _send_to_topic_and_return(self, request):
+        response = self.manager.request_response(request)
+
+        self._set_response(response)
+
+        my_json = json.load(io.BytesIO(response))
+
+        self.wfile.write(my_json.encode('utf8'))
 
 class Request(object):
     def __init__(self, method, path, headers, payload=None) -> None:

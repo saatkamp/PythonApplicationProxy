@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt
 from paho.mqtt.packettypes import PacketTypes
 from paho.mqtt.properties import Properties
 
-from drivermanager.drivermanager import Driver, Connection
+from drivermanager import Driver, Connection
 
 sys.path.append('../')
 
