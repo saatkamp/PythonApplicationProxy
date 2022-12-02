@@ -26,7 +26,11 @@ class WebController(BaseHTTPRequestHandler):
 
         response = self.manager.request_response(request)
 
-        self._send_to_topic_and_return(response)
+        self._set_response(response)
+
+        my_json = json.load(io.BytesIO(response))
+
+        self.wfile.write(my_json.encode('utf8'))
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])  # <--- Gets the size of data
