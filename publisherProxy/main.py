@@ -8,7 +8,6 @@ import drivermanager
 
 
 class WebController(BaseHTTPRequestHandler):
-
     manager = None
 
     def __init__(self, *args):
@@ -42,6 +41,17 @@ class WebController(BaseHTTPRequestHandler):
 
         self._send_to_topic_and_return(request)
 
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', '*')
+        self.send_header('Access-Control-Allow-Headers', '*')
+        self.send_header('Cache-Control', 'no-store, no-cache, must-revalidate')
+        return super(WebController, self).end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
     def _send_to_topic_and_return(self, request):
         response = self.manager.request_response(request)
 
@@ -50,6 +60,7 @@ class WebController(BaseHTTPRequestHandler):
         my_json = json.load(io.BytesIO(response))
 
         self.wfile.write(my_json.encode('utf8'))
+
 
 class Request(object):
     def __init__(self, method, path, headers, payload=None) -> None:
@@ -66,7 +77,7 @@ def run(server_class=HTTPServer, handler_class=WebController, port=9993):
     logging.basicConfig(level=logging.INFO)
     server_address = ('', port)
     httpd = server_class(server_address, handler_class)
-    logging.info('Starting httpd...\n')
+    logging.info('Starting httpd with port ' + str(port))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
