@@ -1,6 +1,7 @@
 import io
 import json
-import sys
+
+from functools import partial
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import logging
 
@@ -10,8 +11,8 @@ import drivermanager
 class WebController(BaseHTTPRequestHandler):
     manager = None
 
-    def __init__(self, *args):
-        self.manager = drivermanager.DriverManager('../driver-manager.yml')
+    def __init__(self, driver_config, *args):
+        self.manager = drivermanager.DriverManager(driver_config)
         BaseHTTPRequestHandler.__init__(self, *args)
 
     def _set_response(self, response_message):
@@ -73,16 +74,19 @@ class Request(object):
         return self
 
 
-def run(server_class=HTTPServer, handler_class=WebController, port=9993):
+def run(port=9993, config="../driver-manager.yml"):
     logging.basicConfig(level=logging.INFO)
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
+
+    controller_class = partial(WebController, config)
+    server = HTTPServer(('', port), controller_class)
     logging.info('Starting httpd with port ' + str(port))
+
     try:
-        httpd.serve_forever()
+        server.serve_forever()
     except KeyboardInterrupt:
         pass
-    httpd.server_close()
+
+    server.server_close()
     logging.info('Stopping httpd...\n')
 
 
@@ -91,5 +95,7 @@ if __name__ == '__main__':
 
     if len(argv) == 2:
         run(port=int(argv[1]))
+    elif len(argv) >= 2:
+        run(port=int(argv[1]), config=argv[2])
     else:
         run()
