@@ -5,6 +5,7 @@ queue using different messaging technologies.
 Therefore, it uses a generic driver approach, whereby drivers can be exchanged for each startup.
 A driver implements the communication to a message broker such as [Mosquitto](https://mosquitto.org/)
 or [RabbitMQ](https://rabbitmq.com/).
+The corresponding Subscriber application is available as the [Java Application Proxy](https://github.com/saatkamp/JavaApplicationProxy).
 
 Currently, only a MQTT driver is implemented.
 
